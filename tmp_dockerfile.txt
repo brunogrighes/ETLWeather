@@ -1,0 +1,18 @@
+﻿# Usa a imagem base do Airflow que vocÃª estava usando
+FROM apache/airflow:2.7.2
+
+# Instala dependÃªncias do sistema operacional necessÃ¡rias para o conector MySQL
+# Esses pacotes sÃ£o essenciais para compilar o conector corretamente.
+USER root
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        default-libmysqlclient-dev \
+        gcc \
+    && apt-get autoremove -yqq --purge \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instala o conector Python que o Airflow usa
+USER airflow
+# O Airflow usa mysql-connector-python se vocÃª especificou 'mysql+mysqlconnector'
+RUN pip install "apache-airflow-providers-mysql==5.1.0"

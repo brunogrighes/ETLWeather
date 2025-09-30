@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    environment:
+
+
+      MYSQL_DATABASE: tempo_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+ # default-authentication-plugin=mysql_native_password
+
+    # ... (restante do serviço)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - mysql-db-volume:/var/lib/mysql
+
+  airflow:
+    build: . 
+    container_name: airflow
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=mysql+mysqlconnector://root:root@mysql:3306/tempo_db
+      - AIRFLOW__CORE__FERNET_KEY=oCguV-3YgWZP88eaJEqn3Ejj6mUeJ8V4aHcRUW2KIiA=
+    volumes:
+      - ./dags:/opt/airflow/dags
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      bash -c "
+      airflow webserver --port 8080 & airflow scheduler
+      "
+
+volumes:
+  mysql-db-volume:
